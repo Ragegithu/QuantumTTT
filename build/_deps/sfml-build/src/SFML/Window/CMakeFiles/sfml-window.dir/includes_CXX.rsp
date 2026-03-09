@@ -1,0 +1,1 @@
+-I"C:/Users/Rage/Documents/GitHub/QuantumTTT/build/_deps/sfml-src/include" -I"C:/Users/Rage/Documents/GitHub/QuantumTTT/build/_deps/sfml-src/src" -isystem "C:/Users/Rage/Documents/GitHub/QuantumTTT/build/_deps/sfml-src/extlibs/headers/glad/include" -isystem "C:/Users/Rage/Documents/GitHub/QuantumTTT/build/_deps/sfml-src/extlibs/headers/vulkan"

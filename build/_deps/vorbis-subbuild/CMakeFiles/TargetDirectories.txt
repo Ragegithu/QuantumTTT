@@ -1,0 +1,3 @@
+C:/Users/Rage/Documents/GitHub/QuantumTTT/build/_deps/vorbis-subbuild/CMakeFiles/vorbis-populate.dir
+C:/Users/Rage/Documents/GitHub/QuantumTTT/build/_deps/vorbis-subbuild/CMakeFiles/edit_cache.dir
+C:/Users/Rage/Documents/GitHub/QuantumTTT/build/_deps/vorbis-subbuild/CMakeFiles/rebuild_cache.dir
