@@ -1,0 +1,12 @@
+-in the struct qubit 
+    alpha is amp of 0 and beta is amp of 1 where one qubit is:
+    {0}
+    {1} 
+    represented as a 2x1 matrix
+
+-Rz is a quantum gate, one of the Rotation operators 
+represented in a matrix like so:
+    Rz(θ) = [ e^(-iθ/2)    0         ]
+            [ 0            e^(iθ/2)  ]
+    when then use eulers formula instead of the e constant to 
+    calculate Rz on a qubit.
