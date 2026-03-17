@@ -1,11 +1,16 @@
 #include <SFML/Graphics.hpp>
 #include <iostream>
-#include <cmath>
 #include <cassert>
+#include <sstream>
 #include <complex>
+#include <cmath>
 
 using ComplexF = std::complex<float>;
 using ComplexD = std::complex<double>;
+
+bool halt = false;
+
+std::string cmdLine = "NO COMMAND HAS BEEN RUN";
 
 struct qubit 
 {
@@ -13,6 +18,7 @@ struct qubit
     ComplexF beta = {0.0,0.0};
 
     bool measured = false;
+    bool selected = false;
 
     float probA()
     {
@@ -50,39 +56,178 @@ void Ry(float angle, qubit& q)
 
 void Hadamard(qubit& q)
 {
-    float s12 = 1/sqrt(2);
-    ComplexF newA = s12 * q.alpha + s12 * q.alpha;
-    ComplexF newB = s12 * q.beta - s12 * q.beta;
+    float s12 = 1.0f/sqrt(2.0f);
+    ComplexF newA = s12 * q.alpha + s12 * q.beta;
+    ComplexF newB = s12 * q.beta - s12 * q.alpha;
+    q.alpha = newA;
+    q.beta  = newB;
+}
+
+
+int x,y;
+void parseCommand(const std::string& input, qubit board[3][3])
+{
+    std::istringstream ss(input);
+    std::string cmd;
+    
+    ss >> cmd;
+    
+    bool oneSelected = false;
+    for(int i = 0; i <= 2; i++)
+    {
+        for(int j = 0; j <= 2; j++)
+        {
+            if(board[j][i].selected)
+            {
+                oneSelected = true;
+            }        
+        }
+    }
+    if(cmd == "select")
+    {
+        ss >> x >> y;
+        y-=1;
+        x-=1;
+
+        for(int i = 0; i <= 2; i++)
+        {
+            for(int j = 0; j <= 2; j++)
+            {
+                board[j][i].selected = false;
+            }
+        }
+        
+        if(x+1 > 3 || y+1 >3)
+        {
+            cmdLine = "OUT OF BOUNDS, STICK TO 3x3 GRID";
+        }
+        else
+        {
+            board[y][x].selected = true;
+            cmdLine = "QUBIT X" + std::to_string(x+1) + "Y" + std::to_string(y+1) + " HAS BEEN SELECTED";
+        }
+    }
+    else if(cmd == "hadamard")
+    {
+        if(oneSelected)
+        {
+            Hadamard(board[y][x]);
+        }
+        else
+            cmdLine = "NO QUBIT HAS BEEN SELECTED";
+    }
+    else if(cmd == "rotatey")
+    {
+        float angle;
+        ss >> angle;
+
+        if(oneSelected)
+        {
+            Ry(angle, board[y][x]);
+        }
+        else
+            cmdLine = "NO QUBIT HAS BEEN SELECTED";
+    }
+    else
+    {
+        std::cout << "command does not exist!" << std::endl;
+        halt = true;
+    }
+
 }
 
 int main()
 {
-    sf::RenderWindow window(sf::VideoMode({800,800}),"QTTT");
+    sf::RenderWindow window(sf::VideoMode({1200,800}),"QTTT");
 
-    //just testing
-    qubit q;
-    std::cout << "Q1 P Alpha: " << q.probA() << std::endl;
-    std::cout << "Q1 P Beta: " << q.probB() << std::endl;
-    Hadamard(q);
-    Rz(180,q);
-    Ry(45,q);
-    Rz(180,q);
-    Ry(170,q);
-    Hadamard(q);
-    std::cout << "Q1 P Alpha: " << q.probA() << std::endl;
-    std::cout << "Q1 P Beta: " << q.probB() << std::endl;
+    qubit qbitarr[3][3] = {};
+    float qubitSize = 200;
+    
+    sf::Font font;
+    if (!font.openFromFile("../assets/dosfont.ttf"))
+    {
+        std::cout << "font not loaded; WRONG FILE LOCATION" << std::endl;
+    }
+    
+    std::string inputBuffer;
+    sf::Text inputText(font, inputBuffer,32);
 
-    //be sure to remove the above block pls :)
+    float SQAlpha = 0, SQBeta = 0;
 
     while (window.isOpen())
     {
         while (const std::optional event = window.pollEvent())
         {
-            if (event->is<sf::Event::Closed>())
+            if (event->is<sf::Event::Closed>() || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Escape) || halt == true)
                 window.close();
+            
+            
+            if (const auto* text = event->getIf<sf::Event::TextEntered>())
+            {
+                if (text->unicode == '\b' && !inputBuffer.empty())
+                    inputBuffer.pop_back();
+                else if (text->unicode == '\r')
+                    {
+                        parseCommand(inputBuffer,qbitarr);
+                        inputBuffer.clear();
+                    }
+                else if (text->unicode < 128)
+                    inputBuffer += static_cast<char>(text->unicode);
+            }
+        }
+        
+        window.clear(sf::Color::Green);
+
+        //XO qubit part below.
+        for(int i=0; i <= 2; i++)
+        {
+            for(int j=0; j <= 2; j++)
+            {
+                sf::RectangleShape qbGrid;
+                qbGrid.setSize({qubitSize,qubitSize});
+                if(qbitarr[j][i].selected == true)
+                {
+                    qbGrid.setFillColor(sf::Color::Blue);
+                    SQAlpha = std::norm(qbitarr[j][i].alpha);
+                    SQBeta = std::norm(qbitarr[j][i].beta);
+                }
+                else
+                {
+                    qbGrid.setFillColor(sf::Color::White);
+                }
+                qbGrid.setPosition({j*(qubitSize + 20) + 20,i*(qubitSize+ 20) + 80});
+                window.draw(qbGrid);
+            }
         }
 
-        window.clear();
+        
+        //sidePanel
+        sf::RectangleShape infoWindow;
+        infoWindow.setFillColor(sf::Color::Black);
+        infoWindow.setOutlineColor(sf::Color::White);
+        infoWindow.setOutlineThickness(3);
+        infoWindow.setSize({800,1000});
+        infoWindow.setPosition({700,0});
+
+        sf::Text cmLine(font, cmdLine);
+        cmLine.setPosition({720,300});
+
+        sf::Text qbitInfoText(font, "Alpha: " + std::to_string(SQAlpha) + " " + "Beta: " + std::to_string(SQBeta));
+        qbitInfoText.setPosition({720,100});
+
+        //input box
+        inputText.setPosition({710,400});
+        inputText.setString("> " + inputBuffer);
+
+
+        window.draw(infoWindow);
+        window.draw(qbitInfoText);
+        window.draw(cmLine);
+        window.draw(inputText);
+
         window.display();
     }
+
+    std::cin.get();
+    return 0;
 }
