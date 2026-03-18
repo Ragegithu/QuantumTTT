@@ -10,3 +10,53 @@ represented in a matrix like so:
             [ 0            e^(iθ/2)  ]
     when then use eulers formula instead of the e constant to 
     calculate Rz on a qubit. then the Complex<float> data type for the i in the Rz matrix.
+
+-Ry is a quantum gate, one of the Rotation operators
+represented in a matrix like so:
+    Ry(θ) = [ cos(θ/2)   -sin(θ/2) ]
+            [ sin(θ/2)    cos(θ/2) ]
+    unlike Rz, Ry mixes alpha and beta together which is what
+    causes probability to shift. the new alpha and beta are:
+        newAlpha = cos(θ/2) * alpha - sin(θ/2) * beta
+        newBeta  = sin(θ/2) * alpha + cos(θ/2) * beta
+    angles are passed in degrees and converted to radians internally.
+
+-Hadamard is a quantum gate that puts a qubit into equal superposition.
+represented in a matrix like so:
+    H = 1/sqrt(2) * [ 1    1 ]
+                    [ 1   -1 ]
+    applied to |0> it gives alpha = 0.707, beta = 0.707 — exactly 50/50.
+    applied twice it returns the qubit to its original state.
+    the new alpha and beta are:
+        newAlpha = (1/sqrt(2)) * alpha + (1/sqrt(2)) * beta
+        newBeta  = (1/sqrt(2)) * alpha - (1/sqrt(2)) * beta
+
+-complex amplitudes
+    alpha and beta are stored as std::complex<float> — a data type with
+    a real and imaginary part. this is necessary because Rz and Rx introduce
+    imaginary components into the amplitudes through phase rotation.
+    the probability of measuring 0 or 1 is the magnitude squared of each amplitude:
+        P(0) = real(alpha)^2 + imag(alpha)^2
+        P(1) = real(beta)^2  + imag(beta)^2
+    these always sum to 1. the imaginary part never directly appears
+    as a probability — it only affects how subsequent gates behave.
+    this is called phase and it is hidden from both players.
+
+-measurement / collapse
+    when measure() is called on a qubit a random float between 0 and 1
+    is sampled and compared against P(1). if the roll is less than P(1)
+    the qubit collapses to |1>, otherwise it collapses to |0>.
+    after collapse alpha and beta are set to their definite states:
+        collapsed to 0: alpha = (1,0)  beta = (0,0)
+        collapsed to 1: alpha = (0,0)  beta = (1,0)
+    the measured flag is set to true and no further gates can be applied.
+    result stores 0 or 1 after collapse, -1 while unmeasured.
+
+-Rz vs Ry
+    Rz only rotates phase — probabilities never change after Rz alone.
+    Ry directly shifts probabilities.
+    Rz becomes meaningful only when both alpha and beta are nonzero
+    (i.e. the qubit is in superposition). applied before any other gate
+    on a fresh |0> qubit it does nothing observable.
+    the strategic use of Rz is to rotate phase before an Ry so that
+    the Ry pushes probability in a different direction than expected.
