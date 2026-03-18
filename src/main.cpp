@@ -20,6 +20,8 @@ struct qubit
     bool measured = false;
     bool selected = false;
 
+    int result = -1;
+
     float probA()
     {
         return alpha.real() * alpha.real() + alpha.imag() * alpha.imag();
@@ -63,6 +65,27 @@ void Hadamard(qubit& q)
     q.beta  = newB;
 }
 
+void measure(qubit& q)
+{
+    if (q.measured) return; // already collapsed, do nothing
+    
+    float roll = (float)rand() / RAND_MAX;
+    
+    if (roll < q.probB()) // collapsed to 1
+    {
+        q.alpha = {0.0f, 0.0f};
+        q.beta  = {1.0f, 0.0f};
+        q.result = 1;
+    }
+    else // collapsed to 0
+    {
+        q.alpha = {1.0f, 0.0f};
+        q.beta  = {0.0f, 0.0f};
+        q.result = 0;
+    }
+    
+    q.measured = true;
+}
 
 int x,y;
 void parseCommand(const std::string& input, qubit board[3][3])
@@ -109,12 +132,16 @@ void parseCommand(const std::string& input, qubit board[3][3])
     }
     else if(cmd == "hadamard")
     {
-        if(oneSelected)
+        if(oneSelected && !board[y][x].measured)
         {
             Hadamard(board[y][x]);
             cmdLine = "APPLIED HADAMARD ON QUBIT";
         }
-        else
+        if(board[y][x].measured)
+        {
+            cmdLine = "QUBIT ALREADY COLLAPSED";
+        }
+        if(!oneSelected)
             cmdLine = "NO QUBIT HAS BEEN SELECTED";
     }
     else if(cmd == "rotateY")
@@ -122,12 +149,16 @@ void parseCommand(const std::string& input, qubit board[3][3])
         float angle;
         ss >> angle;
 
-        if(oneSelected)
+        if(oneSelected && !board[y][x].measured)
         {
             Ry(angle, board[y][x]);
             cmdLine = "ROTATED QUBIT ON Y BY " + std::to_string(angle);
         }
-        else
+        if(board[y][x].measured)
+        {
+            cmdLine = "QUBIT ALREADY COLLAPSED";
+        }
+        if(!oneSelected)
             cmdLine = "NO QUBIT HAS BEEN SELECTED";
     }
     else if(cmd == "rotateZ")
@@ -135,12 +166,26 @@ void parseCommand(const std::string& input, qubit board[3][3])
         float angle;
         ss >> angle;
 
-        if(oneSelected)
+        if(oneSelected&& !board[y][x].measured)
         {
             Rz(angle, board[y][x]);
             cmdLine = "ROTATED QUBIT ON Z BY " + std::to_string(angle);
         }
-        else
+        if(board[y][x].measured)
+        {
+            cmdLine = "QUBIT ALREADY COLLAPSED";
+        }
+        if(!oneSelected)
+            cmdLine = "NO QUBIT HAS BEEN SELECTED";
+    }
+    else if(cmd == "measure")
+    {
+        if(oneSelected && !board[y][x].measured)
+        {
+            measure(board[y][x]);
+            cmdLine = "QUBIT COLLAPSED";
+        }
+        if(!oneSelected)
             cmdLine = "NO QUBIT HAS BEEN SELECTED";
     }
     else if(cmd == "exit" || cmd == "close")
@@ -166,7 +211,19 @@ int main()
     {
         std::cout << "font not loaded; WRONG FILE LOCATION" << std::endl;
     }
+
+    sf::Texture Otex;
+    if(!Otex.loadFromFile("../assets/O.png"))
+        std::cout << "O texture not loaded; WRONG FILE LOCATION" << std::endl;
     
+    sf::Texture Xtex;
+    if(!Xtex.loadFromFile("../assets/X.png"))
+        std::cout << "X texture not loaded; WRONG FILE LOCATION" << std::endl;
+    
+    sf::Texture SPtex;
+    if(!SPtex.loadFromFile("../assets/SuperPosition.png"))
+        std::cout << "SuperPosition texture not loaded; WRONG FILE LOCATION" << std::endl;
+
     std::string inputBuffer;
     sf::Text inputText(font, inputBuffer,32);
 
@@ -194,27 +251,44 @@ int main()
             }
         }
         
-        window.clear(sf::Color::Green);
+        window.clear(sf::Color({126,126,126,255}));
 
         //XO qubit part below.
         for(int i=0; i <= 2; i++)
         {
             for(int j=0; j <= 2; j++)
             {
-                sf::RectangleShape qbGrid;
-                qbGrid.setSize({qubitSize,qubitSize});
+                sf::RectangleShape qbGrid; sf::RectangleShape qbShape;
+                qbGrid.setSize({qubitSize,qubitSize}); qbShape.setSize({qubitSize,qubitSize});
+                qbGrid.setOutlineThickness(3);
                 if(qbitarr[j][i].selected == true)
                 {
-                    qbGrid.setFillColor(sf::Color::Blue);
+                    qbGrid.setFillColor(sf::Color({190,190,190,255})); qbGrid.setOutlineColor(sf::Color::Black);
                     SQAlpha = std::norm(qbitarr[j][i].alpha);
                     SQBeta = std::norm(qbitarr[j][i].beta);
                 }
                 else
                 {
-                    qbGrid.setFillColor(sf::Color::White);
+                    qbGrid.setFillColor(sf::Color::Transparent);
                 }
+
+                if(!qbitarr[j][i].measured)
+                {
+                    qbShape.setTexture(&SPtex);
+                }
+                else if(qbitarr[j][i].result == 1)
+                {
+                    qbShape.setTexture(&Xtex);
+                }
+                else if(qbitarr[j][i].result == 0)
+                {
+                    qbShape.setTexture(&Otex);
+                }
+
+                qbShape.setPosition({j*(qubitSize + 20) + 20,i*(qubitSize+ 20) + 80});
                 qbGrid.setPosition({j*(qubitSize + 20) + 20,i*(qubitSize+ 20) + 80});
                 window.draw(qbGrid);
+                window.draw(qbShape);
             }
         }
 
