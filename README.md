@@ -38,9 +38,17 @@ Once measured a qubit is locked. No further gates can be applied.
 
 Requires CMake 3.16+ and GCC (MSYS2 UCRT64 on Windows). SFML 3 is fetched automatically.
 
+
+# Windows (MSYS2)
 ```bash
 mkdir build && cd build
-cmake .. -G "MinGW Makefiles"
+cmake .. -G "MinGW Makefiles" -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++
+cmake --build .
+```
+# Linux
+```bash
+mkdir build && cd build
+cmake ..
 cmake --build .
 ```
 ## Why
