@@ -58,7 +58,7 @@ void Hadamard(qubit& q)
 {
     float s12 = 1.0f/sqrt(2.0f);
     ComplexF newA = s12 * q.alpha + s12 * q.beta;
-    ComplexF newB = s12 * q.beta - s12 * q.alpha;
+    ComplexF newB = s12 * q.alpha - s12 * q.beta;
     q.alpha = newA;
     q.beta  = newB;
 }
@@ -112,11 +112,12 @@ void parseCommand(const std::string& input, qubit board[3][3])
         if(oneSelected)
         {
             Hadamard(board[y][x]);
+            cmdLine = "APPLIED HADAMARD ON QUBIT";
         }
         else
             cmdLine = "NO QUBIT HAS BEEN SELECTED";
     }
-    else if(cmd == "rotatey")
+    else if(cmd == "rotateY")
     {
         float angle;
         ss >> angle;
@@ -124,14 +125,27 @@ void parseCommand(const std::string& input, qubit board[3][3])
         if(oneSelected)
         {
             Ry(angle, board[y][x]);
+            cmdLine = "ROTATED QUBIT ON Y BY " + std::to_string(angle);
+        }
+        else
+            cmdLine = "NO QUBIT HAS BEEN SELECTED";
+    }
+    else if(cmd == "rotateZ")
+    {
+        float angle;
+        ss >> angle;
+
+        if(oneSelected)
+        {
+            Rz(angle, board[y][x]);
+            cmdLine = "ROTATED QUBIT ON Z BY " + std::to_string(angle);
         }
         else
             cmdLine = "NO QUBIT HAS BEEN SELECTED";
     }
     else
     {
-        std::cout << "command does not exist!" << std::endl;
-        halt = true;
+        cmdLine = "COMMAND DOES NOT EXIST";
     }
 
 }
@@ -227,7 +241,4 @@ int main()
 
         window.display();
     }
-
-    std::cin.get();
-    return 0;
 }
