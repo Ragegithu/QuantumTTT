@@ -10,7 +10,7 @@ using ComplexD = std::complex<double>;
 
 bool halt = false;
 
-std::string cmdLine = "NO COMMAND HAS BEEN RUN";
+std::string cmdLine = "NO COMMAND HAS BEEN RUN YET";
 
 struct qubit 
 {
@@ -142,6 +142,10 @@ void parseCommand(const std::string& input, qubit board[3][3])
         }
         else
             cmdLine = "NO QUBIT HAS BEEN SELECTED";
+    }
+    else if(cmd == "exit" || cmd == "close")
+    {
+        halt = true;
     }
     else
     {
